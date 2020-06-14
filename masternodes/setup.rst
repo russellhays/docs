@@ -88,7 +88,7 @@ Select a location for your new server on the following screen:
 
    Vultr server location selection screen
 
-Select Ubuntu 18.04 x64 as the server type. We use this LTS release of
+Select Ubuntu 20.04 x64 as the server type. We use this LTS release of
 Ubuntu instead of the latest version because LTS releases are supported
 with security updates for 5 years, instead of the usual 9 months.
 
@@ -277,22 +277,101 @@ However, since the masternode does not actually store the keys to any
 Dash, these steps are considered beyond the scope of this guide.
 
 
-Send the collateral
-===================
+Set up the masternode with mn-bootstrap
+=======================================
 
 A Dash address with a single unspent transaction output (UTXO) of
 exactly 1000 DASH is required to operate a masternode. Once it has been
 sent, various keys regarding the transaction must be extracted for later
 entry in a configuration file and registration transaction as proof to
 write the configuration to the blockchain so the masternode can be
-included in the deterministic list. A masternode can be registered from
-a hardware wallet or the official Dash Core wallet, although a hardware
-wallet is highly recommended to enhance security and protect yourself
-against hacking. This guide will describe the steps for both hardware
-wallets and Dash Core.
+included in the deterministic list. The collateral transaction and
+registration can be created using the ``mn-bootstrap`` tool or manually.
+If using a hardware wallet, only the manual method is currently
+supported.
 
-Option 1: Sending from a hardware wallet
-----------------------------------------
+Install mn-bootstrap
+--------------------
+
+``mn-bootstrap`` is used to install Dash Core and other necessary
+masternode services, create the collateral and registration
+transactions, and start the masternode with the correct configuration.
+
+Open PuTTY or a console again and connect using the username and
+password you just created for your new, non-root user. Begin by
+installing the dependencies required for the masternode installation
+tool::
+
+  sudo apt install git docker.io docker-compose nodejs npm
+
+Add your current user to the docker group::
+
+  sudo usermod -aG docker <username>
+
+Log out and log back in again. Clone the mn-bootstrap repository, set up
+the dependencies and link the CLI::
+
+  git clone -b master https://github.com/dashevo/mn-bootstrap.git
+  cd mn-bootstrap
+  npm install
+  sudo npm link
+
+Continue with the next step to setup the collateral, keys and construct
+the ProTx transaction required to enable your masternode.
+
+Send the collateral and generate keys
+-------------------------------------
+
+Send more than 1000 Dash (e.g. 1001 Dash) to an address where you have
+access to the private key. If using Dash Core, you can export the
+private key from the console under **Tools** > **Debug console**::
+
+  dumpprivkey yXxMh7fiP88SjPPvtHgdjJ9evxvbbMkKud
+
+``mn-bootstrap`` will then take this key and generate the necessary keys
+and transactions to collateralize and register your masternode. This is
+done using the ``mn register`` command, which takes the following
+syntax::
+
+  mn register PRESET FUNDING-PRIVATE-KEY EXTERNAL-IP PORT
+
+For example::
+
+  mn register testnet cVeyRnWupGJquQvA3g7GcxbzVPfVojVbyovc1E9Aic2krWad1frL 149.28.127.8 19999
+
+``mn-bootstrap`` will output a number of keys and transactions, which
+you will need in later steps.
+
+Start the masternode
+--------------------
+
+Identify the operator private key in the output from the ``mn register``
+command. This is used by the ``mn start`` command to start a new
+masternode, which will watch the blockchain for relevant Pro*Tx
+transactions, and will cause it to start serving as a masternode when
+the signed ProRegTx is seen on the blockchain. Issue the ``mn start``
+command using the following syntax::
+
+  mn start PRESET EXTERNAL-IP CORE-P2P-PORT -p <operator-private-key>
+
+Where:
+
+- ``PRESET``: The network you are using, e.g. ``testnet`` or ``evonet``
+- ``EXTERNAL-IP``: The public IP address of your masternode
+- ``CORE-P2P-PORT``: The port to use for P2P traffic
+- ``-p <operator-private-key>``: The BLS private key generated above
+
+For example::
+
+  mn start testnet 149.28.127.8 19999 -p 395555d67d884364f9e37e7e1b29536519b74af2e5ff7b62122e62c2fffab35e
+
+``mn-bootstrap`` will start your masternode.
+
+Set up the masternode manually
+==============================
+
+Option 1: Creating transactions and keys manually (hardware wallet)
+-------------------------------------------------------------------
 
 Set up your Trezor using the Trezor wallet at https://wallet.trezor.io/
 and send a test transaction to verify that it is working properly. For
@@ -375,8 +454,8 @@ steps as shown in this screenshot:
 Leave DMT open and continue with the next step: :ref:`installing Dash
 Core on your VPS <masternode-setup-install-dashcore>`.
 
-Option 2: Sending from Dash Core wallet
----------------------------------------
+Option 2: Creating transactions and keys manually (Dash Core)
+-------------------------------------------------------------
 
 Open Dash Core wallet and wait for it to synchronize with the network.
 It should look like this when ready:
@@ -420,72 +499,12 @@ your masternode operator key.
    Trezor blockchain explorer showing 15 confirmations for collateral
    transfer
 
-
-.. _masternode-setup-install-dashcore:
-
 Install Dash Core
-=================
+-----------------
 
 Dash Core is the software behind both the Dash Core GUI wallet and Dash
 masternodes. If not displaying a GUI, it runs as a daemon on your VPS
 (dashd), controlled by a simple command interface (dash-cli).
-
-Open PuTTY or a console again and connect using the username and
-password you just created for your new, non-root user. There are two
-options to install Dash Core, an automated option using a script utility
-called dashman, and a more complicated option which will allow you to
-understand all of the key steps involved in preparing your masternode.
-
-Option 1: Automated installation using dashman
-----------------------------------------------
-
-To install Dash using dashman, enter the following commands after
-logging in::
-
-  cd ~
-  git clone https://github.com/moocowmoo/dashman
-  ~/dashman/dashman install
-
-(press **Y** and **Enter** to confirm)
-
-dashman will download the latest version of Dash Core for your system,
-as well as an initial snapshot of the blockchain to speed up the
-bootstrapping process. Next download and install Sentinel, which is
-required for masternodes at version 0.12.1 or higher::
-
-  ~/dashman/dashman install sentinel
-
-Your system is now running as a standard Dash node, and is busy
-completing synchronisation with the blockchain. Since dashman does not
-automatically restart your masternode in the event of a system error,
-add a check function to crontab to make sure it checks every minute to
-ensure your masternode is still running::
-
-  crontab -e
-
-Choose nano as your editor and enter the following line at the end of
-the file, after the line for sentinel::
-
-  * * * * * { pidof dashd || ~/.dashcore/dashd;} >/dev/null 2>&1
-
-Press enter to make sure there is a blank line at the end of the file,
-then press **Ctrl + X** to close the editor and **Y** and **Enter** save
-the file. Check the sync status and wait until all blockchain
-synchronisation and the 15 confirmations for the collateral transaction
-are complete::
-
-  ~/dashman/dashman status
-
-.. figure:: img/setup-dashman-done.png
-   :width: 400px
-
-   dashman status output showing masternode ready to be registered
-
-Continue with the :ref:`next step to register your masternode
-<register-masternode>`.
-
-Option 2: Manual installation
------------------------------
 
 To manually download and install the components of your Dash masternode,
 visit the `GitHub releases page <https://github.com/dashpay/dash/releases>`_ 
@@ -620,11 +639,10 @@ response::
 Continue with the next step to construct the ProTx transaction required
 to enable your masternode.
 
-
 .. _register-masternode:
 
 Register your masternode
-========================
+------------------------
 
 DIP003 introduced several changes to how a masternode is set up and
 operated. These changes and the three keys required for the different
@@ -633,7 +651,7 @@ documentation.
 
 
 Option 1: Registering from a hardware wallet
---------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Go back to DMT and ensure that all fields from the previous step are
 still filled out correctly.  Click **Generate new** for the three
@@ -690,9 +708,8 @@ seconds in between to give Dash Core time to shut down::
   sleep 15
   ~/.dashcore/dashd
 
-At this point you can monitor your masternode using 
-``~/dashman/dashman status``, by entering 
-``~/.dashcore/dash-cli masternode status`` or using the **Get status** 
+At this point you can monitor your masternode by entering
+``~/.dashcore/dash-cli masternode status`` or using the **Get status**
 function in DMT. The final result should appear as follows:
 
 .. figure:: img/setup-dash-cli-start.png
@@ -707,7 +724,7 @@ Congratulations! Your masternode is now running.
 .. _dashcore-protx:
 
 Option 2: Registering from Dash Core wallet
--------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Identify the funding transaction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -954,14 +971,8 @@ where the txid of the final ``protx register_submit`` transaction
 identifies your masternode.
 
 At this point you can go back to your terminal window and monitor your
-masternode using ``~/dashman/dashman status``, by entering
-``~/.dashcore/dash-cli masternode status`` or using the **Get status**
-function in DMT. The final result should appear as follows:
-
-.. figure:: img/setup-dashman-started.png
-   :width: 400px
-
-   dashman status output showing successfully registered masternode
+masternode by entering ``~/.dashcore/dash-cli masternode status`` or
+using the **Get status** function in DMT. 
 
 At this point you can safely log out of your server by typing ``exit``.
 Congratulations! Your masternode is now running.

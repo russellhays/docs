@@ -354,6 +354,11 @@ For example::
 you must store safely. The operator private key is needed in the next
 step.
 
+.. figure:: img/setup-bootstrap-register.png
+   :width: 400px
+
+   mn-bootstrap masternode registration
+
 Start the masternode
 --------------------
 

@@ -304,12 +304,13 @@ tool::
 
   sudo apt install git docker.io docker-compose nodejs npm
 
-Add your current user to the docker group::
+Add your current user to the docker group and refresh the environment::
 
   sudo usermod -aG docker <username>
+  exec su -l $USER
 
-Log out and log back in again. Clone the mn-bootstrap repository, set up
-the dependencies and link the CLI::
+Clone the mn-bootstrap repository, set up the dependencies and link the
+CLI::
 
   git clone -b master https://github.com/dashevo/mn-bootstrap.git
   cd mn-bootstrap

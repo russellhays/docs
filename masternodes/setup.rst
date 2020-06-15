@@ -322,6 +322,11 @@ the ProTx transaction required to enable your masternode.
 Send the collateral and generate keys
 -------------------------------------
 
+``mn-bootstrap`` can generate your collateral transaction and keys for
+you, but it will require a private key with funding to do so.
+Alternatively, you can skip this step and handle key generate manually
+(e.g. using DMT).
+
 Send more than 1000 Dash (e.g. 1001 Dash) to an address where you have
 access to the private key. If using Dash Core, you can export the
 private key from the console under **Tools** > **Debug console**::
@@ -340,7 +345,8 @@ For example::
   mn register testnet cVeyRnWupGJquQvA3g7GcxbzVPfVojVbyovc1E9Aic2krWad1frL 149.28.127.8 19999
 
 ``mn-bootstrap`` will output a number of keys and transactions, which
-you will need in later steps.
+you must store safely. The operator private key is needed in the next
+step.
 
 Start the masternode
 --------------------

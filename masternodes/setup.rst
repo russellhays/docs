@@ -317,12 +317,6 @@ CLI::
   npm install
   sudo npm link
 
-TEMPORARY WORKAROUND: Modify mn-bootstrap to use the latest ``develop`` branch
-images for Dash Core::
-
-  cd mn-bootstrap
-  sed -i '0,/dashd/s//dashd-develop/' docker-compose.yml
-
 Continue with the next step to setup the collateral, keys and construct
 the ProTx transaction required to enable your masternode.
 

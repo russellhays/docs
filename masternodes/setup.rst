@@ -317,8 +317,8 @@ real public IP address (visible using ``mn status:host``::
 Continue with the next step to setup the collateral, keys and construct
 the ProTx transaction required to enable your masternode.
 
-Send the collateral and generate keys
-=====================================
+Send collateral and create protx
+================================
 
 A Dash address with a single unspent transaction output (UTXO) of
 exactly 1000 DASH is required to operate a masternode. Once it has been
@@ -437,6 +437,7 @@ following two messages:
 
    Dash Masternode Tool confirmation dialogs to register a masternode
 
+
 Using Dash Core
 ---------------
 
@@ -526,10 +527,6 @@ Debug console** and entering the following command::
 similar to the value provided in the past by the** ``masternode genkey``
 **command.**
 
-.. _register-masternode:
-
-Register your masternode
-------------------------
 
 Prepare the provider registration transaction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

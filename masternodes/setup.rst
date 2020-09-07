@@ -277,25 +277,12 @@ However, since the masternode does not actually store the keys to any
 Dash, these steps are considered beyond the scope of this guide.
 
 
-Set up the masternode with mn-bootstrap
-=======================================
-
-A Dash address with a single unspent transaction output (UTXO) of
-exactly 1000 DASH is required to operate a masternode. Once it has been
-sent, various keys regarding the transaction must be extracted for later
-entry in a configuration file and registration transaction as proof to
-write the configuration to the blockchain so the masternode can be
-included in the deterministic list. The collateral transaction and
-registration can be created using the ``mn-bootstrap`` tool or manually.
-If using a hardware wallet, only the manual method is currently
-supported.
-
 Install mn-bootstrap
---------------------
+====================
 
 ``mn-bootstrap`` is used to install Dash Core and other necessary
-masternode services, create the collateral and registration
-transactions, and start the masternode with the correct configuration.
+masternode services and manage the configuration. It can optionally also
+be used to create the collateral and registration transactions.
 
 Open PuTTY or a console again and connect using the username and
 password you just created for your new, non-root user. Begin by
@@ -307,7 +294,7 @@ tool::
 Add your current user to the docker group and refresh the environment::
 
   sudo usermod -aG docker <username>
-  exec su -l $USER
+  newgrp docker
 
 Clone the mn-bootstrap repository, set up the dependencies and link the
 CLI::
@@ -317,73 +304,34 @@ CLI::
   npm install
   sudo npm link
 
+Then specify an appropriate default config for use with upcoming ``mn``
+commands for your masternode. For example, to select testnet::
+
+  mn config:default testnet
+
+And specify your IP address as follows, replacing ``1.2.3.4`` with your
+real public IP address (visible using ``mn status:host``::
+
+  mn config:set externalIp 1.2.3.4
+
 Continue with the next step to setup the collateral, keys and construct
 the ProTx transaction required to enable your masternode.
 
 Send the collateral and generate keys
--------------------------------------
+=====================================
 
-``mn-bootstrap`` can generate your collateral transaction and keys for
-you, but it will require a private key with funding to do so.
-Alternatively, you can skip this step and handle key generate manually
-(e.g. using DMT).
+A Dash address with a single unspent transaction output (UTXO) of
+exactly 1000 DASH is required to operate a masternode. Once it has been
+sent, various keys regarding the transaction must be extracted for entry
+in the ``mn-bootstrap`` configuration and in the registration
+transaction as proof to write the configuration to the blockchain so the
+masternode can be included in the deterministic list. The collateral
+transaction and registration can be created using DMT for hardware
+wallets, Dash Core for software wallets or the ``mn-bootstrap`` tool for
+test networks.
 
-Send more than 1000 Dash (e.g. 1001 Dash) to an address where you have
-access to the private key. If using Dash Core, you can export the
-private key from the console under **Tools** > **Debug console**::
-
-  dumpprivkey yXxMh7fiP88SjPPvtHgdjJ9evxvbbMkKud
-
-``mn-bootstrap`` will then take this key and generate the necessary keys
-and transactions to collateralize and register your masternode. This is
-done using the ``mn register`` command, which takes the following
-syntax::
-
-  mn register PRESET FUNDING-PRIVATE-KEY EXTERNAL-IP PORT
-
-For example::
-
-  mn register testnet cVeyRnWupGJquQvA3g7GcxbzVPfVojVbyovc1E9Aic2krWad1frL 149.28.127.8 19999
-
-``mn-bootstrap`` will output a number of keys and transactions, which
-you must store safely. The operator private key is needed in the next
-step.
-
-.. figure:: img/setup-bootstrap-register.png
-   :width: 400px
-
-   mn-bootstrap masternode registration
-
-Start the masternode
---------------------
-
-Identify the operator private key in the output from the ``mn register``
-command. This is used by the ``mn start`` command to start a new
-masternode, which will watch the blockchain for relevant Pro*Tx
-transactions, and will cause it to start serving as a masternode when
-the signed ProRegTx is seen on the blockchain. Issue the ``mn start``
-command using the following syntax::
-
-  mn start PRESET EXTERNAL-IP CORE-P2P-PORT -p <operator-private-key>
-
-Where:
-
-- ``PRESET``: The network you are using, e.g. ``testnet`` or ``evonet``
-- ``EXTERNAL-IP``: The public IP address of your masternode
-- ``CORE-P2P-PORT``: The port to use for P2P traffic
-- ``-p <operator-private-key>``: The BLS private key generated above
-
-For example::
-
-  mn start testnet 149.28.127.8 19999 -p 395555d67d884364f9e37e7e1b29536519b74af2e5ff7b62122e62c2fffab35e
-
-``mn-bootstrap`` will start your masternode.
-
-Set up the masternode manually
-==============================
-
-Option 1: Creating transactions and keys manually (hardware wallet)
--------------------------------------------------------------------
+Using Dash Masternode Tool
+--------------------------
 
 Set up your Trezor using the Trezor wallet at https://wallet.trezor.io/
 and send a test transaction to verify that it is working properly. For
@@ -463,11 +411,34 @@ steps as shown in this screenshot:
 
    Dash Masternode Tool with masternode configuration
 
-Leave DMT open and continue with the next step: :ref:`installing Dash
-Core on your VPS <masternode-setup-install-dashcore>`.
+Click **Generate new** for the three private keys required for a DIP003
+deterministic masternode:
 
-Option 2: Creating transactions and keys manually (Dash Core)
--------------------------------------------------------------
+- Owner private key
+- Operator private key
+- Voting private key
+
+.. figure:: img/setup-dmt-full.png
+   :width: 220px
+
+   Dash Masternode Tool ready to register a new masternode
+
+Then click **Register masternode**. Optionally specify a different
+**Payout address** and/or **Operator reward**, then click **Continue**.
+Select **Remote Dash RPC Node (automatic method)**. (See `here <https://github.com/Bertrand256/dash-masternode-tool/blob/master/doc/config-connection-direct.md>`__ 
+for documentation on using your own local RPC node.) and confirm the
+following two messages:
+
+.. image:: img/setup-dmt-send.png
+   :width: 220px
+
+.. figure:: img/setup-dmt-sent.png
+   :width: 220px
+
+   Dash Masternode Tool confirmation dialogs to register a masternode
+
+Using Dash Core
+---------------
 
 Open Dash Core wallet and wait for it to synchronize with the network.
 It should look like this when ready:
@@ -510,236 +481,6 @@ your masternode operator key.
 
    Trezor blockchain explorer showing 15 confirmations for collateral
    transfer
-
-Install Dash Core
------------------
-
-Dash Core is the software behind both the Dash Core GUI wallet and Dash
-masternodes. If not displaying a GUI, it runs as a daemon on your VPS
-(dashd), controlled by a simple command interface (dash-cli).
-
-To manually download and install the components of your Dash masternode,
-visit the `GitHub releases page <https://github.com/dashpay/dash/releases>`_ 
-and copy the link to the latest ``x86_64-linux-gnu`` version. Go back to
-your terminal window and enter the following command, pasting in the
-address to the latest version of Dash Core by right clicking or pressing
-**Ctrl + V**::
-
-  cd /tmp
-  wget https://github.com/dashpay/dash/releases/download/v0.15.0.0/dashcore-0.15.0.0-x86_64-linux-gnu.tar.gz
-
-Verify the integrity of your download by running the following command
-and comparing the output against the value for the file as shown in the
-``SHA256SUMS.asc`` file::
-
-  wget https://github.com/dashpay/dash/releases/download/v0.15.0.0/SHA256SUMS.asc
-  sha256sum dashcore-0.15.0.0-x86_64-linux-gnu.tar.gz
-  cat SHA256SUMS.asc
-
-You can also optionally verify the authenticity of your download as an
-official release by Dash Core Team. All releases of Dash are signed
-using GPG by Alexander Block (codablock) with the key ``63A9 6B40 6102 E091``, 
-`verifiable here on Keybase <https://keybase.io/codablock>`_. Import the
-key, download the ASC file for the current release of Dash and verify
-the signature as follows::
-
-  curl https://keybase.io/codablock/pgp_keys.asc | gpg --import
-  gpg --verify SHA256SUMS.asc
-
-.. figure:: img/setup-manual-gpg.png
-   :width: 400px
-
-   Downloading the PGP key and verifying the signed binary
-
-Create a working directory for Dash, extract the compressed archive and
-copy the necessary files to the directory::
-
-  mkdir ~/.dashcore
-  tar xfv dashcore-0.15.0.0-x86_64-linux-gnu.tar.gz
-  cp -f dashcore-0.15.0/bin/dashd ~/.dashcore/
-  cp -f dashcore-0.15.0/bin/dash-cli ~/.dashcore/
-
-Create a configuration file using the following command::
-
-  nano ~/.dashcore/dash.conf
-
-An editor window will appear. We now need to create a configuration file
-specifying several variables. Copy and paste the following text to get
-started, then replace the variables specific to your configuration as
-follows::
-
-  #----
-  rpcuser=XXXXXXXXXXXXX
-  rpcpassword=XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-  rpcallowip=127.0.0.1
-  #----
-  listen=1
-  server=1
-  daemon=1
-  #----
-  #masternodeblsprivkey=
-  externalip=XXX.XXX.XXX.XXX
-  #----
-
-Replace the fields marked with ``XXXXXXX`` as follows:
-
-- ``rpcuser``: enter any string of numbers or letters, no special
-  characters allowed
-- ``rpcpassword``: enter any string of numbers or letters, no special
-  characters allowed
-- ``externalip``: this is the IP address of your VPS
-
-Leave the ``masternodeblsprivkey`` field commented out for now. The
-result should look something like this:
-
-.. figure:: img/setup-manual-conf.png
-   :width: 400px
-
-   Entering key data in dash.conf on the masternode
-
-Press **Ctrl + X** to close the editor and **Y** and **Enter** save the
-file. You can now start running Dash on the masternode to begin
-synchronization with the blockchain::
-
-  ~/.dashcore/dashd
-
-You will see a message reading **Dash Core server starting**. We will
-now install Sentinel, a piece of software which operates as a watchdog
-to communicate to the network that your node is working properly::
-
-  cd ~/.dashcore
-  git clone https://github.com/dashpay/sentinel.git
-  cd sentinel
-  virtualenv venv
-  venv/bin/pip install -r requirements.txt
-  venv/bin/python bin/sentinel.py
-
-You will see a message reading **dashd not synced with network! Awaiting
-full sync before running Sentinel.** Add dashd and sentinel to crontab
-to make sure it runs every minute to check on your masternode::
-
-  crontab -e
-
-Choose nano as your editor and enter the following lines at the end of
-the file::
-
-  * * * * * cd ~/.dashcore/sentinel && ./venv/bin/python bin/sentinel.py 2>&1 >> sentinel-cron.log
-  * * * * * pidof dashd || ~/.dashcore/dashd
-
-Press enter to make sure there is a blank line at the end of the file,
-then press **Ctrl + X** to close the editor and **Y** and **Enter** save
-the file. We now need to wait for 15 confirmations of the collateral
-transaction to complete, and wait for the blockchain to finish
-synchronizing on the masternode. You can use the following commands to
-monitor progress::
-
-  ~/.dashcore/dash-cli mnsync status
-
-When synchronisation is complete, you should see the following
-response::
-
-  {
-    "AssetID": 999,
-    "AssetName": "MASTERNODE_SYNC_FINISHED",
-    "AssetStartTime": 1558596597,
-    "Attempt": 0,
-    "IsBlockchainSynced": true,
-    "IsSynced": true,
-    "IsFailed": false
-  }
-
-Continue with the next step to construct the ProTx transaction required
-to enable your masternode.
-
-.. _register-masternode:
-
-Register your masternode
-------------------------
-
-DIP003 introduced several changes to how a masternode is set up and
-operated. These changes and the three keys required for the different
-masternode roles are described briefly under :ref:`dip3-changes` in this
-documentation.
-
-
-Option 1: Registering from a hardware wallet
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Go back to DMT and ensure that all fields from the previous step are
-still filled out correctly.  Click **Generate new** for the three
-private keys required for a DIP003 deterministic masternode:
-
-- Owner private key
-- Operator private key
-- Voting private key
-
-.. figure:: img/setup-dmt-full.png
-   :width: 220px
-
-   Dash Masternode Tool ready to register a new masternode
-
-Then click **Register masternode**. Optionally specify a different
-**Payout address** and/or **Operator reward**, then click **Continue**.
-Select **Remote Dash RPC Node (automatic method)**. (See `here <https://github.com/Bertrand256/dash-masternode-tool/blob/master/doc/config-connection-direct.md>`__ 
-for documentation on using your own local RPC node.) and confirm the
-following two messages:
-
-.. image:: img/setup-dmt-send.png
-   :width: 220px
-
-.. figure:: img/setup-dmt-sent.png
-   :width: 220px
-
-   Dash Masternode Tool confirmation dialogs to register a masternode
-
-The BLS private key must be entered in the ``dash.conf`` file on the
-masternode. This allows the masternode to watch the blockchain for
-relevant Pro*Tx transactions, and will cause it to start serving as a
-masternode when the signed ProRegTx is broadcast by the owner, as we
-just did above. Log in to your masternode using ``ssh`` or PuTTY and
-edit the configuration file as follows::
-
-  nano ~/.dashcore/dash.conf
-
-The editor appears with the existing masternode configuration. Add or
-uncomment this lines in the file, replacing the key with your BLS
-private key generated above::
-
-  masternodeblsprivkey=24c1fa3c22c6ea6b1cc68a37be18acb51042b19465fe0a26301c8717bf939805
-
-Press enter to make sure there is a blank line at the end of the file,
-then press **Ctrl + X** to close the editor and **Y** and **Enter** save
-the file. Note that providing a ``masternodeblsprivkey`` enables
-masternode mode, which will automatically force the ``txindex=1``,
-``peerbloomfilters=1``, and ``prune=0`` settings necessary to provide
-masternode service. We now need to restart the masternode for this
-change to take effect. Enter the following commands, waiting a few
-seconds in between to give Dash Core time to shut down::
-
-  ~/.dashcore/dash-cli stop
-  sleep 15
-  ~/.dashcore/dashd
-
-At this point you can monitor your masternode by entering
-``~/.dashcore/dash-cli masternode status`` or using the **Get status**
-function in DMT. The final result should appear as follows:
-
-.. figure:: img/setup-dash-cli-start.png
-   :width: 400px
-
-   dash-cli masternode status output showing successfully registered masternode
-
-At this point you can safely log out of your server by typing ``exit``.
-Congratulations! Your masternode is now running.
-
-
-.. _dashcore-protx:
-
-Option 2: Registering from Dash Core wallet
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Identify the funding transaction
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you used an address in Dash Core wallet for your collateral
 transaction, you now need to find the txid of the transaction. Click
@@ -785,46 +526,17 @@ Debug console** and entering the following command::
 similar to the value provided in the past by the** ``masternode genkey``
 **command.**
 
-Add the private key to your masternode configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _register-masternode:
 
-The public key will be used in following steps. The private key must be
-entered in the ``dash.conf`` file on the masternode. This allows the
-masternode to watch the blockchain for relevant Pro*Tx transactions, and
-will cause it to start serving as a masternode when the signed ProRegTx
-is broadcast by the owner (final step below). Log in to your masternode
-using ``ssh`` or PuTTY and edit the configuration file as follows::
+Register your masternode
+------------------------
 
-  nano ~/.dashcore/dash.conf
+Prepare the provider registration transaction
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The editor appears with the existing masternode configuration. Add or
-uncomment this line in the file, replacing the key with your BLS private
-key generated above::
-
-  masternodeblsprivkey=395555d67d884364f9e37e7e1b29536519b74af2e5ff7b62122e62c2fffab35e
-
-Press enter to make sure there is a blank line at the end of the file,
-then press **Ctrl + X** to close the editor and **Y** and **Enter** save
-the file. Note that providing a ``masternodeblsprivkey`` enables
-masternode mode, which will automatically force the ``txindex=1``,
-``peerbloomfilters=1``, and ``prune=0`` settings necessary to provide
-masternode service. We now need to restart the masternode for this
-change to take effect. Enter the following commands, waiting a few
-seconds in between to give Dash Core time to shut down::
-
-  ~/.dashcore/dash-cli stop
-  sleep 15
-  ~/.dashcore/dashd
-
-We will now prepare the transaction used to register the masternode on
-the network.
-
-Prepare a ProRegTx transaction
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A pair of BLS keys for the operator were already generated above, and
-the private key was entered on the masternode. The public key is used in
-this transaction as the ``operatorPubKey``.
+The BLS public key is used in this transaction as the
+``operatorPubKey``, while the secret/private key is entered in the
+masternode configuration in the final step.
 
 First, we need to get a new, unused address from the wallet to serve as
 the **owner key address** (``ownerKeyAddr``). This is not the same as
@@ -982,9 +694,64 @@ Core wallet, or in the console using the command ``protx list valid``,
 where the txid of the final ``protx register_submit`` transaction
 identifies your masternode.
 
-At this point you can go back to your terminal window and monitor your
-masternode by entering ``~/.dashcore/dash-cli masternode status`` or
-using the **Get status** function in DMT. 
+
+Using mn-bootstrap
+------------------
+
+``mn-bootstrap`` can generate your collateral transaction and keys for
+you, but it will require a private key with funding to do so.
+
+Send more than 1000 Dash (e.g. 1001 Dash) to an address where you have
+access to the private key. If using Dash Core, you can export the
+private key from the console under **Tools** > **Debug console**::
+
+  dumpprivkey yXxMh7fiP88SjPPvtHgdjJ9evxvbbMkKud
+
+``mn-bootstrap`` will then take this key and generate the necessary keys
+and transactions to collateralize and register your masternode. This is
+done using the ``mn register`` command, which takes the following
+syntax::
+
+  mn register FUNDING-PRIVATE-KEY
+
+For example::
+
+  mn register cVeyRnWupGJquQvA3g7GcxbzVPfVojVbyovc1E9Aic2krWad1frL
+
+``mn-bootstrap`` will output a number of keys and transactions, which
+you must store safely. The operator private key is needed in the next
+step.
+
+.. figure:: img/setup-bootstrap-register.png
+   :width: 400px
+
+   mn-bootstrap masternode registration
+
+
+Start the masternode
+====================
+
+The BLS private key generated in the previous step by either DMT, Dash
+Core or ``mn-bootstrap`` must now be entered in the ``mn-bootstrap``
+config on the masternode. This allows the masternode to watch the
+blockchain for relevant Pro*Tx transactions, and will cause it to start
+serving as a masternode when the signed ProRegTx is seen on the
+blockchain after sync is complete. Type the following on the masternode,
+replacing ``<BLS_PRIVKEY>`` with your operator private key generated
+above::
+
+  mn config:set core.masternode.operator.privateKey <BLS_PRIVKEY>
+
+Together with the IP address and selection of the network already
+completed, specification of the configuration is now complete. Start
+your masternode with the following command::
+
+  mn start
+
+You can monitor your masternode status with the following commands::
+
+  mn status:services
+  mn status:masternode
 
 At this point you can safely log out of your server by typing ``exit``.
 Congratulations! Your masternode is now running.

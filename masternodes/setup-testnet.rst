@@ -1205,8 +1205,8 @@ Finishing up
 
 Ensure services managed by ``forever`` start on reboot::
 
-  cat<<"EOF"|crontab
-  * * * * * cd ~/.dashcore/sentinel && ./venv/bin/python bin/sentinel.py 2>&1 >> sentinel-cron.log
+  cat << EOF | crontab
+  * * * * * cd ~/sentinel && ./venv/bin/python bin/sentinel.py 2>&1 >> sentinel-cron.log
   @reboot { sleep 5;cd ~/js-drive&&forever start -a --uid "drive" scripts/abci.js;}
   @reboot { sleep 6;cd ~/dapi&&forever start -a --uid "dapi" scripts/api.js;}
   @reboot { sleep 7;cd ~/dapi&&forever start -a --uid "tx-filter-stream" scripts/tx-filter-stream.js;}

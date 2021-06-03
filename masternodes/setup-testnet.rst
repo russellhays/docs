@@ -892,7 +892,7 @@ Configure Dash Core::
   zmqpubrawchainlock=tcp://0.0.0.0:29998
   #----
   #masternodeblsprivkey=
-  externalip=$(curl ifconfig.co)
+  externalip=$(curl -s ifconfig.co)
   proxy=127.0.0.1:9050
   torcontrol=127.0.0.1:9051
   #----

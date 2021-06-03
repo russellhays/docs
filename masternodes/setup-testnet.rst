@@ -1010,7 +1010,9 @@ Configure MongoDB::
 
 Restart MongoDB::
 
-  sudo systemctl restart mongod
+  sudo systemctl daemon-reload
+  sudo systemctl enable mongod
+  sudo systemctl start mongod
 
 Initiate the MongoDB client::
   
@@ -1066,8 +1068,8 @@ to build from source. Install Go as follows::
 
   cd /tmp
   wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz
-  sudo tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz
-  export PATH=$PATH:/usr/local/go/bin
+  sudo tar -C /opt -xzf go1.16.4.linux-amd64.tar.gz
+  export PATH=$PATH:/opt/go/bin
 
 Build and install Tenderdash as follows::
 
@@ -1083,14 +1085,14 @@ Initialize Tenderdash::
 
   tenderdash init
 
-Several files will be generated in the ``~/.tenderdash`` directory.
+Several files will be generated in the ``~/.tendermint`` directory.
 Modify the configuration with the following commands::
 
-  sed -i 's/\(^moniker.*\)/#\1/' ~/.tenderdash/config/config.toml
-  sed -i 's/^timeout_commit.*/timeout_commit = "500ms"/' ~/.tenderdash/config/config.toml
-  sed -i 's/^create_empty_blocks_interval.*/create_empty_blocks_interval = "3m"/' ~/.tenderdash/config/config.toml
-  sed -i 's/^namespace.*/namespace = "drive_tendermint"/' ~/.tenderdash/config/config.toml
-  sed -i 's/^seeds.*/seeds = "aa4c3870e6cebd575c80371b4ae0e902a2885e14@54.189.200.56:26656,81c79324942867f694ee49108f05e744c343f5a1@52.43.162.96:26656"/' ~/.tenderdash/config/config.toml
+  sed -i 's/\(^moniker.*\)/#\1/' ~/.tendermint/config/config.toml
+  sed -i 's/^timeout_commit.*/timeout_commit = "500ms"/' ~/.tendermint/config/config.toml
+  sed -i 's/^create_empty_blocks_interval.*/create_empty_blocks_interval = "3m"/' ~/.tendermint/config/config.toml
+  sed -i 's/^namespace.*/namespace = "drive_tendermint"/' ~/.tendermint/config/config.toml
+  sed -i 's/^seeds.*/seeds = "aa4c3870e6cebd575c80371b4ae0e902a2885e14@54.189.200.56:26656,81c79324942867f694ee49108f05e744c343f5a1@52.43.162.96:26656"/' ~/.tendermint/config/config.toml
   curl https://gist.githubusercontent.com/strophy/ca6acd23bbdec1e55f322dac04a1059d/raw/741ffbba9e009157ad49ce4f7ee6644f45f8d677/genesis.json > ~/.tendermint/config/genesis.json
 
 Configure Tenderdash to start as a service::

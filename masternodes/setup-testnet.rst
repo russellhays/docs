@@ -36,6 +36,7 @@ the first time. If you are updating a masternode, see  :ref:`here
 - A wallet to store your Dash, preferably a hardware wallet, although 
   Dash Core wallet is also supported
 - A Linux server, preferably a Virtual Private Server (VPS)
+- A public IP address, or port forwarding control (if behind a gateway)
 
 Dash 0.13.0 and later implement DIP003, which introduces several changes
 to how a Dash masternode is set up and operated. While this network
